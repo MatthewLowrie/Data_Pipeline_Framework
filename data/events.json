@@ -1,0 +1,38 @@
+[
+  {
+    "event_type": "page_view",
+    "timestamp": "2026-07-01T10:00:00",
+    "user_id": "u001",
+    "page": "/home"
+  },
+  {
+    "event_type": "click",
+    "timestamp": "2026-07-01T10:05:00",
+    "user_id": "u002",
+    "page": "/products"
+  },
+  {
+    "event_type": null,
+    "timestamp": "2026-07-01T10:10:00",
+    "user_id": "u003",
+    "page": "/about"
+  },
+  {
+    "event_type": "purchase",
+    "timestamp": null,
+    "user_id": "u001",
+    "page": "/checkout"
+  },
+  {
+    "event_type": "page_view",
+    "timestamp": "2026-07-01T10:20:00",
+    "user_id": "u004",
+    "page": "/home"
+  },
+  {
+    "event_type": "click",
+    "timestamp": "2026-07-01T10:25:00",
+    "user_id": "u002",
+    "page": "/cart"
+  }
+]

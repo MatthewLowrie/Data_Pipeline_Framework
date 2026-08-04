@@ -1,0 +1,9 @@
+id,product,amount,quantity,region
+1,Widget A,29.99,10,North
+2,Widget B,,5,South
+3,Gadget C,49.99,3,East
+4,,15.00,7,West
+5,Widget A,29.99,,North
+6,Gadget D,99.99,2,South
+7,Widget B,19.99,12,East
+8,Gadget C,,1,North
