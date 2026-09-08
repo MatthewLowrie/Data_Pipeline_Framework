@@ -7,6 +7,13 @@
     "region": "North"
   },
   {
+    "id": "2",
+    "product": "Widget B",
+    "amount": "",
+    "quantity": "5",
+    "region": "South"
+  },
+  {
     "id": "3",
     "product": "Gadget C",
     "amount": "49.99",
@@ -40,5 +47,12 @@
     "amount": "19.99",
     "quantity": "12",
     "region": "East"
+  },
+  {
+    "id": "8",
+    "product": "Gadget C",
+    "amount": "",
+    "quantity": "1",
+    "region": "North"
   }
 ]
