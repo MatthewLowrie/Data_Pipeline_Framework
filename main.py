@@ -1,18 +1,30 @@
 from loaders import JSONLoader
-from sources import CSVSource, JSONSource
+from sources import CSVSource
+from transforms import FilterNulls, RenameColumns, TypeCast
 
 
 def main() -> None:
-    csv_source = CSVSource(name="sales_csv", filepath="data/sales.csv")
-    csv_records = csv_source.extract()
-    print(f"CSV extracted: {len(csv_records)} records")
+    # Extract records from CSV
+    source = CSVSource(name="sales_csv", filepath="data/sales.csv")
+    records = source.extract()
+    print(f"Extracted: {len(records)} records")
 
-    json_source = JSONSource(name="events_json", filepath="data/events.json")
-    json_records = json_source.extract()
-    print(f"JSON extracted: {len(json_records)} records")
+    # Apply transforms in sequence
+    filter_transform = FilterNulls(name="remove_empty", fields=["amount", "product"])
+    records = filter_transform.apply(records)
+    print(f"After FilterNulls: {len(records)} records")
 
+    cast_transform = TypeCast(name="cast_types", schema={"amount": float, "quantity": int})
+    records = cast_transform.apply(records)
+    print(f"After TypeCast: {len(records)} records")
+
+    rename_transform = RenameColumns(name="standardize", mapping={"product": "product_name"})
+    records = rename_transform.apply(records)
+    print(f"After RenameColumns: {len(records)} records")
+
+    # Load clean records to JSON
     loader = JSONLoader(name="json_output", filepath="output/sales_clean.json")
-    loaded = loader.load(csv_records)
+    loaded = loader.load(records)
     print(f"Loaded: {loaded} records")
 
 
