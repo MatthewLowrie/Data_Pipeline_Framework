@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 # These act as structural type declarations so Python knows what objects we are tracking.
 from loaders import DataLoader
 from models import PipelineResult, Record, StepResult
+from observers import Observer
 from sources import DataSource
 from transforms import Transform
 
@@ -89,6 +90,8 @@ class Pipeline:
         # This is a classic example of COMPOSITION: the Pipeline 'has a' log recorder.
         self._log = PipelineLog()
 
+        self._observers: list[Observer] = []
+                
     @property
     def name(self) -> str:
         """Provides controlled, read-only access to the internal pipeline name."""
@@ -111,6 +114,23 @@ class Pipeline:
         self._loader = loader
         return self
     
+    def add_observer(self, observer: Observer) -> "Pipeline":
+        """Attach an observer. Returns self for method chaining."""
+        self._observers.append(observer)
+        return self
+
+    def _notify_start(self, step_name: str) -> None:
+        for observer in self._observers:
+            observer.on_step_start(step_name)
+
+    def _notify_complete(self, step_name: str, records_out: int) -> None:
+        for observer in self._observers:
+            observer.on_step_complete(step_name, records_out)
+
+    def _notify_error(self, step_name: str, error: str) -> None:
+        for observer in self._observers:
+            observer.on_error(step_name, error)
+    
     def run(self) -> PipelineResult:
         """Execute the pipeline end-to-end."""
         if not self._source:
@@ -126,22 +146,27 @@ class Pipeline:
 #         If extraction fails, it logs the failure and immediately returns a failed PipelineResult. 
 
 #         The records_in variable captures the starting count so the final result can calculate a drop rate.
+        # Extract
+        extract_name = f"Extract: {self._source.name}"
+        self._notify_start(extract_name)
         try:
             records = self._source.extract()
             self._log.add(StepResult(
-                step_name=f"Extract: {self._source.name}",
+                step_name=extract_name,
                 records_in=0,
                 records_out=len(records),
                 status="success"
             ))
+            self._notify_complete(extract_name, len(records))
         except Exception as e:
             self._log.add(StepResult(
-                step_name=f"Extract: {self._source.name}",
+                step_name=extract_name,
                 records_in=0,
                 records_out=0,
                 status="failed",
                 error=str(e)
             ))
+            self._notify_error(extract_name, str(e))
             return PipelineResult(
                 records_in=0, records_out=0,
                 success=False, errors=[str(e)]
@@ -152,44 +177,52 @@ class Pipeline:
         # Transform
         # Unlike the Extract phase, a failed transform does not abort the pipeline. \
         # It logs the error and continues with whatever records survived.
+                # Transform
         for transform in self._transforms:
+            transform_name = f"Transform: {transform.name}"
             count_before = len(records)
+            self._notify_start(transform_name)
             try:
                 records = transform.apply(records)
                 self._log.add(StepResult(
-                    step_name=f"Transform: {transform.name}",
+                    step_name=transform_name,
                     records_in=count_before,
                     records_out=len(records),
                     status="success"
                 ))
+                self._notify_complete(transform_name, len(records))
             except Exception as e:
                 errors.append(f"{transform.name}: {str(e)}")
                 self._log.add(StepResult(
-                    step_name=f"Transform: {transform.name}",
+                    step_name=transform_name,
                     records_in=count_before,
                     records_out=len(records),
                     status="failed",
                     error=str(e)
                 ))
-        
+                self._notify_error(transform_name, str(e))
         # Load
+        load_name = f"Load: {self._loader.name}"
+        self._notify_start(load_name)
         try:
             loaded_count = self._loader.load(records)
             self._log.add(StepResult(
-                step_name=f"Load: {self._loader.name}",
+                step_name=load_name,
                 records_in=len(records),
                 records_out=loaded_count,
                 status="success"
             ))
+            self._notify_complete(load_name, loaded_count)
         except Exception as e:
             errors.append(f"Load failed: {str(e)}")
             self._log.add(StepResult(
-                step_name=f"Load: {self._loader.name}",
+                step_name=load_name,
                 records_in=len(records),
                 records_out=0,
                 status="failed",
                 error=str(e)
             ))
+            self._notify_error(load_name, str(e))
             return PipelineResult(
                 records_in=records_in, records_out=0,
                 success=False, errors=errors
