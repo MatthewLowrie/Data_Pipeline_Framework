@@ -1,0 +1,5 @@
+event_type,timestamp,user_id,page
+page_view,2026-07-01T10:00:00,u001,/home
+click,2026-07-01T10:05:00,u002,/products
+page_view,2026-07-01T10:20:00,u004,/home
+click,2026-07-01T10:25:00,u002,/cart
